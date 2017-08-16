@@ -15,6 +15,8 @@ import android.text.TextUtils;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
+import me.leolin.shortcutbadger.ShortcutBadger;
+
 import java.util.Map;
 import java.util.Random;
 
@@ -44,14 +46,17 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
         String title;
         String text;
         String id;
+        String badge;
         if (remoteMessage.getNotification() != null) {
             title = remoteMessage.getNotification().getTitle();
             text = remoteMessage.getNotification().getBody();
             id = remoteMessage.getMessageId();
+            badge = null;
         } else {
             title = remoteMessage.getData().get("title");
             text = remoteMessage.getData().get("text");
             id = remoteMessage.getData().get("id");
+            badge = remoteMessage.getData().get("badge");
         }
 
         if(TextUtils.isEmpty(id)){
@@ -69,6 +74,10 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
         if (!TextUtils.isEmpty(text) || !TextUtils.isEmpty(title) || (!remoteMessage.getData().isEmpty())) {
             boolean showNotification = (FirebasePlugin.inBackground() || !FirebasePlugin.hasNotificationsCallback()) && (!TextUtils.isEmpty(text) || !TextUtils.isEmpty(title));
             sendNotification(id, title, text, remoteMessage.getData(), showNotification);
+        }
+
+        if (!TextUtils.isEmpty(badge)) {
+            updateBadgeNumber(badge);
         }
     }
 
@@ -123,5 +132,11 @@ public class FirebasePluginMessagingService extends FirebaseMessagingService {
             bundle.putString("body", messageBody);
             FirebasePlugin.sendNotification(bundle);
         }
+    }
+
+    private void updateBadgeNumber(String badge) {
+        try {
+            ShortcutBadger.applyCount(this, Integer.parseInt(badge));
+        } catch(NumberFormatException e) {}
     }
 }
